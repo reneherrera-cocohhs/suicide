@@ -1,0 +1,1010 @@
+---
+title: "Coconino County Health and Human Services Vital Record and Medical Examiner Data for Death by Suicide"
+subtitle: ""
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  beamer_presentation:
+    colortheme: "seahorse"
+    slide_level: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  error = FALSE,
+  message = FALSE,
+  fig.width = 11
+)
+```
+
+```{r libraries}
+library(here)
+library(tidyverse)
+library(pins)
+library(knitr)
+library(RColorBrewer)
+library(scales)
+library(cowplot)
+```
+
+```{r theme}
+theme_suicide_data_report <- theme_classic() +
+  theme(
+    axis.line = element_line(size = .5, color = "#979797"),
+    axis.ticks = element_line(size = .5, color = "#979797"),
+    aspect.ratio = 3 / 5.5,
+    text = element_text(
+      size = 14,
+      color = "#3b3b3b"
+    )
+  )
+```
+
+```{r read}
+# load pin board
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
+
+# read complete data set
+azdhs_suicide_data_extract <- suicide_data %>%
+  pin_read("azdhs_suicide_data_extract")
+
+# years of analysis
+analysis_year_range <- c(as.character(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_current)))
+
+# lower limit
+analysis_year_range_ll <- as.character(min(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_ul)))
+
+# upper limit
+analysis_year_range_ul <- as.character(max(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_ul)))
+
+# current year
+analysis_year_current <- as.character(max(unique(azdhs_suicide_data_extract$year_analysis_current)))
+
+# create a character string showing range of years included in report
+years_of_analysis <- str_c(analysis_year_range_ll,
+  analysis_year_range_ul,
+  sep = " - "
+)
+
+# read count of death by suicide including ME pending cases
+azdhs_death_by_suicide_coco_resident_me <- suicide_data %>%
+  pin_read("azdhs_death_by_suicide_coco_resident_me")
+
+# read death by suicide data
+death_by_suicide_coconino_resident_age_adjusted_rate <- suicide_data %>%
+  pin_read("death_by_suicide_coconino_resident_age_adjusted_rate")
+
+# read comparison of age adjusted rates
+rates_usa_az_coco <- suicide_data %>%
+  pin_read("death_by_suicide_rate_comparison")
+
+# read geospatial rate by zip code
+gis_rate_zipcode_spatial <- suicide_data %>%
+  pin_read("gis_rate_zipcode_spatial")
+
+# read geospatial coconino county boundary
+gis_coco_county_spatial <- suicide_data %>%
+  pin_read("gis_coco_county_spatial")
+
+# read geospatial coconino county primary roads
+gis_coco_county_roads_spatial <- suicide_data %>%
+  pin_read("gis_coco_county_roads_spatial")
+
+# read data by race
+death_by_suicide_coconino_resident_race_specific_rate <- suicide_data %>%
+  pin_read("death_by_suicide_coconino_resident_race_specific_rate")
+
+# read population denominators by race
+azdhs_pop_data_by_sex_gender <- suicide_data %>%
+  pin_read("azdhs_pop_data_by_sex_gender")
+
+# read death by suicide data with categorical data lumps
+azdhs_suicide_data_extract_plus_categorical_lumps <- suicide_data %>%
+  pin_read("azdhs_suicide_data_extract_plus_categorical_lumps")
+
+# most recent death
+most_recent <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  summarise(max(date_of_death))
+
+most_recent <- format(most_recent$`max(date_of_death)`, "%d %B %Y")
+```
+
+## Confidentiality
+
+
+**Please do not distribute.**
+
+
+**This information is confidential and intended for the purposes of this group.**
+
+
+## Notes
+
+
+- All data presented for year `r analysis_year_range_ul` and `r analysis_year_current` is subject to change.
+- Mortality data is provided by AZDHS.
+- Pending cases with the medical examiner's office are included only in the number of deaths (slide 4). 
+- AZDHS data is up to date as of `r most_recent`.
+
+
+## Number of Deaths by Suicide Among Coconino County Residents (`r analysis_year_range_ll` - `r analysis_year_current`)
+
+
+```{r 04-number}
+# preparation
+# plot upper limits
+death_by_suicide_count_ul <- azdhs_death_by_suicide_coco_resident_me %>%
+  summarise(count_ul = (max(n)) * 1.3) %>%
+  as.numeric()
+
+# title, subitle, & caption
+count_me_pending_cases <- azdhs_suicide_data_extract %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    me_brief == "yes"
+  ) %>%
+  count() %>%
+  as.numeric()
+
+plot_caption <- str_c(
+  "2021 & 2022 figures are based off preliminary death data and include ",
+  count_me_pending_cases,
+  " possible deaths by suicide currently under investigation by the Coconino County Medical Examiner's Office."
+)
+
+# plot
+azdhs_death_by_suicide_coco_resident_me %>%
+  ggplot(mapping = aes(x = death_book_year, y = n, group = 1)) +
+  geom_line(color = "#0476D0", size = 1) +
+  geom_label(aes(label = n),
+    alpha = (5 / 6),
+    color = "white",
+    fill = "#0476D0",
+    fontface = "bold"
+  ) +
+  ylim(0, death_by_suicide_count_ul) +
+  labs(
+    title = str_wrap("Total Number of Deaths by Suicide for Each Year",
+      width = 120
+    ),
+    subtitle = str_wrap("Includes only Coconino County residents.", width = 120),
+    x = "Year",
+    y = "Number of deaths",
+    caption = str_wrap(plot_caption,
+      width = 120
+    )
+  ) +
+  theme_suicide_data_report
+```
+
+
+## Comparison of Age-Adjusted Death by Suicide Rate with Coconino County, Arizona, and the U.S. (`r years_of_analysis`)
+
+
+```{r 05-rate-comparison}
+# preparation
+age_adj_rates_ul <- rates_usa_az_coco %>%
+  summarise(rate_ul = (max(age_adjusted_rate)) * 1.3) %>%
+  as.numeric()
+
+# plot
+rates_usa_az_coco %>%
+  filter(age_adjusted_rate > 0) %>%
+  ggplot() +
+  geom_line(
+    mapping = aes(
+      x = year,
+      y = age_adjusted_rate,
+      group = geography,
+      color = geography
+    ),
+    size = 1,
+    alpha = (5 / 6)
+  ) +
+  geom_label(
+    mapping = aes(
+      x = year,
+      y = age_adjusted_rate,
+      label = round(age_adjusted_rate, 1),
+      fill = geography
+    ),
+    color = "white",
+    fontface = "bold",
+    alpha = (5 / 6)
+  ) +
+  ylim(0, age_adj_rates_ul) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = str_wrap("Age-Adjusted Rate of Death by Suicide", width = 120),
+    subtitle = str_wrap("Includes only Coconino County residents.", width = 120),
+    x = "Year",
+    y = "Age adjusted rate per 100K",
+    color = "",
+    fill = "",
+    caption = str_wrap("2020 & 2021 death by suicide rate is not yet available for Arizona and the United States. The Coconino rate is derived from the population denominator provided by AZDHS with year 2020 population estimate being carried over to 2021.", width = 120)
+  ) +
+  guides(
+    fill = guide_legend(
+      override.aes = aes(label = "")
+    )
+  ) +
+  theme_suicide_data_report
+```
+
+## Death by Suicide in Coconino County by Coconino County Residence (`r years_of_analysis`)
+
+```{r 06-resident}
+# preparation
+count_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  group_by(death_book_year, county_resident) %>% # county residents only
+  count() %>%
+  ungroup() %>%
+  summarise(count_ul = (max(n)) * 1.3) %>%
+  as.numeric()
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  group_by(death_book_year, county_resident) %>% # county residents only
+  count() %>%
+  ungroup() %>%
+  ggplot(mapping = aes(
+    x = death_book_year,
+    y = n,
+    group = county_resident,
+    color = county_resident
+  )) +
+  geom_line(size = 1, alpha = (5 / 6)) +
+  geom_label(
+    mapping = aes(
+      fill = county_resident,
+      x = death_book_year,
+      y = n,
+      label = (n)
+    ),
+    alpha = (5 / 6),
+    color = "white",
+    fontface = "bold"
+  ) +
+  ylim(0, count_ul) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Death by Suicide Occurring in Coconino County",
+    x = "Year",
+    y = "Number of deaths",
+    color = "Coconino Resident",
+    fill = "Coconino Resident",
+    caption = "Death by suicide for non-residents occurred within Coconino County."
+  ) +
+  theme_suicide_data_report +
+  guides(
+    fill = guide_legend(
+      override.aes = aes(label = "")
+    )
+  )
+```
+
+## Residence of Coconino County Suicides (`r years_of_analysis`)
+
+
+```{r 07-city-list}
+# preparation
+city_count_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(residence_city_name, min = 6)) %>%
+  count(city_code) %>%
+  summarise(count_ul = (max(n)) * 1.3) %>%
+  as.numeric()
+
+city_count_caption <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(residence_city_name, min = 6)) %>%
+  count(city_code) %>%
+  filter(city_code == "Other")
+
+city_count_caption <- str_c("Not shown are",
+  as.character(city_count_caption[1, 2]),
+  "deaths by suicide from other cities because the count for that city is less than 6.",
+  sep = " "
+)
+
+city_count_title <- str_c("City Residence of Death by Suicide in Coconino County (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(residence_city_name, min = 6)) %>%
+  count(city_code) %>%
+  filter(city_code != "Other") %>%
+  ggplot() +
+  geom_col(mapping = aes(x = reorder(city_code, n), y = n), fill = "#647c90") +
+  ylim(0, city_count_ul) +
+  coord_flip() +
+  geom_text(mapping = aes(x = reorder(city_code, n), y = n, label = (n)), nudge_y = 4, color = "#647c90", fontface = "bold") +
+  labs(
+    title = str_wrap(city_count_title, width = 120),
+    subtitle = str_wrap("Cities shown only if 6 or more deaths by suicide. Includes only Coconino County residents.", width = 120),
+    x = "City",
+    y = "Number of deaths",
+    caption = str_wrap(city_count_caption,
+      width = 120
+    )
+  ) +
+  theme_suicide_data_report
+```
+
+## Rate of Death by Suicide by Zip Code for Coconino County Residents (`r years_of_analysis`)
+
+```{r 08-geospatial}
+geo_plot_title <- str_c("Death by Suicide for Coconino County Residents (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+death_by_suicide_rate_geospatial <- gis_rate_zipcode_spatial %>%
+  ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(mapping = aes(fill = rate_per_100k), color = NA) +
+  scale_fill_viridis_c() +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  # geom_sf_label(data = coconino_municipal,
+  #              mapping = aes(label = NAME),
+  #              nudge_y = .05,
+  #              nudge_x = .05,
+  #              size = 2,
+  #              alpha = (1/3)
+  #              ) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 120),
+    subtitle = str_wrap("Including only those zip codes with more than 6 deaths by suicide of Coconino County Residents.",
+      width = 120
+    ),
+    fill = "Rate per 100K",
+    color = "Rate per 100K",
+    caption = str_wrap("Coconino rate derived with population denominator provided by AZDHS. Year 2020 population estimate carried over to 2021.", width = 60)
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.425,
+    height = 0.425
+  )
+```
+
+## Age Groups of Death by Suicide for Coconino County Residents (`r years_of_analysis`)
+
+```{r 09-age-group}
+# preparation
+death_by_age_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(age_group_6cat) %>%
+  count() %>%
+  ungroup() %>%
+  summarise(age_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+death_by_age_title <- str_c("Death by Suicide for Each Age Group (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(age_group_6cat) %>%
+  count() %>%
+  ungroup() %>%
+  ggplot() +
+  geom_bar(
+    mapping = aes(x = age_group_6cat, y = n),
+    stat = "identity", fill = "#01949A"
+  ) +
+  ylim(0, death_by_age_ul) +
+  coord_flip() +
+  geom_text(
+    mapping = aes(
+      x = age_group_6cat,
+      y = n,
+      label = (n)
+    ),
+    nudge_y = 4,
+    color = "#808080",
+    fontface = "bold"
+  ) +
+  # annotate(
+  #   geom = "text", x = 1, y = 80,
+  #   label = str_wrap("2021 figures are based off preliminary death data", width = 40), hjust = 0, vjust = 1
+  # ) +
+  labs(
+    title = str_wrap(death_by_age_title,
+      width = 120
+    ),
+    subtitle = "Including only Coconino County residents.",
+    x = "Age Group",
+    y = "Number of deaths"
+  ) +
+  theme_suicide_data_report
+```
+
+## Age Groups for Death by Suicide (`r analysis_year_range_ul`)
+
+```{r 10-age-group-current}
+# preparation
+age_year_title <- str_c("Death by Suicide for Each Age Group, Year to Date (",
+  analysis_year_range_ul,
+  ")",
+  sep = ""
+)
+
+count_me_pending_cases <- azdhs_suicide_data_extract %>%
+  filter(
+    death_book_year == analysis_year_range_ul,
+    me_brief == "yes"
+  ) %>%
+  count() %>%
+  as.numeric()
+
+# plot_caption <- str_c(analysis_year_range_ul,
+#                       " figures are based off preliminary death data and include ",
+#                       count_me_pending_cases,
+#                       " possible deaths by suicide currently under investigation by the Coconino County Medical Examiner's Office.")
+
+count_age_ul <- azdhs_suicide_data_extract %>%
+  filter(
+    death_book_year == analysis_year_range_ul,
+    county_resident == "Resident"
+  ) %>% # county residents only
+  count(age_group_6cat) %>%
+  summarise(count_age_ul = (max(n) * 1.5)) %>%
+  as.numeric()
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(
+    death_book_year == analysis_year_range_ul,
+    county_resident == "Resident"
+  ) %>% # county residents only
+  count(age_group_6cat) %>%
+  ggplot(mapping = aes(x = age_group_6cat, y = n)) +
+  geom_bar(stat = "identity", fill = "#01949A") +
+  geom_text(
+    mapping = aes(
+      x = age_group_6cat,
+      y = n,
+      label = (n)
+    ),
+    nudge_y = .5,
+    color = "#808080",
+    fontface = "bold"
+  ) +
+  ylim(0, count_age_ul) +
+  coord_flip() +
+  labs(
+    title = str_wrap(age_year_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Age Group",
+    y = "Number of deaths",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+## Age Groups of Death by Suicides for Coconino County Residents (`r years_of_analysis`)
+
+
+```{r 11-age-group-by-year}
+age_group_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year, age_group_6cat) %>%
+  count(age_group_6cat) %>%
+  ungroup() %>%
+  summarise(age_group_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+age_group_by_year_title <- str_c("Age Groups of Death by Suicide (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year, age_group_6cat) %>%
+  count(age_group_6cat) %>%
+  # mutate(year = as.integer(death_book_year)) %>%
+  ggplot(mapping = aes(x = death_book_year, y = n)) +
+  geom_bar(
+    position = "dodge",
+    stat = "identity",
+    mapping = aes(fill = age_group_6cat),
+    # color = "#979797"
+  ) +
+  scale_fill_brewer(palette = "Set3", name = "Age Group") +
+  geom_text(
+    position = position_dodge(width = .9),
+    mapping = aes(label = (n), group = age_group_6cat),
+    color = "#3b3b3b",
+    vjust = -.5
+  ) +
+  labs(
+    title = str_wrap(age_group_by_year_title,
+      width = 120
+    ),
+    subtitle = "Including only Coconino County residents.",
+    x = "Year",
+    y = "Number of deaths"
+  ) +
+  ylim(0, age_group_ul) +
+  scale_x_discrete(breaks = seq(as.numeric(analysis_year_range_ll), as.numeric(analysis_year_range_ul), 1)) +
+  theme_suicide_data_report
+```
+
+## Death by Suicide and Race for Coconino County Residents (`r years_of_analysis`)
+
+```{r 12-race-by-year}
+# preparation
+# color palette
+# set color palettes
+coconino_population_by_race_palette <- death_by_suicide_coconino_resident_race_specific_rate$race_code_lump
+
+death_by_suicide <- azdhs_suicide_data_extract_plus_categorical_lumps
+
+palette_race_4 <- brewer.pal(n = 4, name = "Set2")
+names(palette_race_4) <- levels(factor(c(
+  levels(death_by_suicide$race_code_lump),
+  levels(coconino_population_by_race_palette)
+))) # Extract all levels of both data
+
+race_by_year_title <- str_c("Death by Suicide and Race (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+race_count_ul <- death_by_suicide %>%
+  group_by(death_book_year) %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  count(race_code_lump) %>%
+  ungroup() %>%
+  summarise(count_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+death_by_race_year_count <- death_by_suicide %>%
+  group_by(death_book_year) %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  count(race_code_lump) %>%
+  pivot_wider(
+    names_from = race_code_lump, values_from = n
+  ) %>%
+  ungroup()
+
+death_by_race_year_count[is.na(death_by_race_year_count)] <- 0
+
+# plot
+death_by_race_year_count %>%
+  pivot_longer(
+    cols = 2:5,
+    names_to = "race_code_lump",
+    values_to = "n"
+  ) %>%
+  ggplot(mapping = aes(
+    x = death_book_year,
+    y = n,
+    group = race_code_lump,
+    color = race_code_lump
+  )) +
+  geom_line(size = 1) +
+  geom_label(
+    mapping = aes(
+      fill = race_code_lump,
+      x = death_book_year,
+      y = n,
+      label = (n)
+    ),
+    alpha = (5 / 6),
+    color = "white",
+    fontface = "bold"
+  ) +
+  scale_color_manual(values = palette_race_4) +
+  scale_fill_manual(values = palette_race_4) +
+  ylim(0, race_count_ul) +
+  labs(
+    title = str_wrap(race_by_year_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Year",
+    y = "Number of deaths",
+    color = "Race",
+    fill = "Race"
+  ) +
+  theme_suicide_data_report +
+  guides(
+    fill = guide_legend(
+      override.aes = aes(label = "")
+    )
+  )
+```
+
+
+## Percentage of Death by Suicide by Race (`r years_of_analysis`)
+
+
+```{r 13-race-by-percent}
+# preparation
+# Percent stacked barchart
+death_by_suicide_race_percentage <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  count(race_code_lump) %>%
+  mutate(n_percent = round(100 * (n / sum(n)), digits = 0)) %>%
+  mutate(group = "Coconino Death by Suicide") %>%
+  mutate(race_code = race_code_lump)
+
+coconino_population_by_race_percentage <- azdhs_pop_data_by_sex_gender %>%
+  filter(race_ethnicity != "All groups") %>%
+  filter(year == 2020) %>%
+  filter(age_group == "total") %>%
+  filter(sex == "Total") %>%
+  filter(area == "Coconino") %>%
+  mutate(
+    estimate = as.numeric(estimate),
+    race_code_lump =
+      case_when(
+        race_ethnicity == "White non-Hispanic" ~ "White Non-Hispanic",
+        race_ethnicity == "Hispanic or Latino" ~ "Hispanic or Latino (any race)",
+        race_ethnicity == "Black or African American" ~ "Other",
+        race_ethnicity == "Asian or Pacific Islander" ~ "Other",
+        race_ethnicity == "American Indian or Alaska Native" ~ "American Indian and Alaska Native"
+      )
+  ) %>%
+  group_by(race_code_lump) %>%
+  summarise(estimate = sum(estimate)) %>%
+  mutate(
+    n_percent = round(100 * (estimate / sum(estimate)), digits = 0),
+    group = "Coconino 2020 Population"
+  )
+
+suicide_by_race_percentage <- bind_rows(
+  death_by_suicide_race_percentage,
+  coconino_population_by_race_percentage
+)
+
+suicide_by_race_percentage <- full_join(
+  x = death_by_suicide_race_percentage,
+  y = coconino_population_by_race_percentage,
+  by = c(
+    "n" = "estimate",
+    "race_code_lump" = "race_code_lump",
+    "n_percent" = "n_percent",
+    "group" = "group"
+  )
+)
+
+percent_race_by_year_title <- str_c("Percentage of Death by Suicide by Race in Comparison to 2020 Population (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+suicide_by_race_percentage %>%
+  ggplot(mapping = aes(fill = race_code_lump, y = n_percent, x = group)) +
+  geom_col(position = "fill") +
+  geom_text(
+    position = position_fill(vjust = 0.5),
+    mapping = aes(label = comma(n)),
+    color = "white"
+  ) +
+  scale_fill_manual(values = palette_race_4) +
+  # scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(labels = percent) +
+  labs(
+    title = str_wrap(percent_race_by_year_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "",
+    y = "Percentage",
+    fill = "Race",
+    caption = str_wrap("The values presented within the plot represent the Coconino 2020 Population estimate and the number of deaths by suicide, respectively.", width = 120)
+  ) +
+  theme_suicide_data_report
+```
+
+## Deaths by Suicide and Gender for Coconino County Residents (`r years_of_analysis`)
+
+```{r 14-sex-by-year}
+# preparation
+sex_count_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year) %>%
+  count(sex) %>%
+  ungroup() %>%
+  summarise(sex_count_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+gender_by_year_title <- str_c("Deaths by Suicide by Sex (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year) %>%
+  count(sex) %>%
+  ggplot(mapping = aes(x = death_book_year, y = n, group = sex, color = sex)) +
+  geom_line(size = 1) +
+  geom_label(
+    mapping = aes(fill = sex, x = death_book_year, y = n, label = (n)),
+    alpha = (5 / 6),
+    color = "white",
+    fontface = "bold"
+  ) +
+  ylim(0, sex_count_ul) +
+  scale_color_brewer(palette = "Accent") +
+  scale_fill_brewer(palette = "Accent") +
+  labs(
+    title = str_wrap(gender_by_year_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Year",
+    y = "Number of deaths",
+    color = "Sex",
+    fill = "Sex"
+  ) +
+  theme_suicide_data_report +
+  guides(
+    fill = guide_legend(
+      override.aes = aes(label = "")
+    )
+  )
+```
+
+## Total Deaths by Suicide and Gender for Coconino County Residents (`r years_of_analysis`)
+
+```{r 15-sex}
+# preparation
+by_sex_total_count_ul <- azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(sex) %>%
+  count() %>%
+  ungroup() %>%
+  summarise(count_ul = (max(n)) * 1.3) %>%
+  as.numeric()
+
+gender_title <- str_c("Death by Suicide for Each Sex (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(sex) %>%
+  count() %>%
+  ungroup() %>%
+  ggplot(mapping = aes(x = sex, y = n)) +
+  geom_col(mapping = aes(fill = sex), show.legend = FALSE) +
+  geom_text(
+    mapping = aes(label = n, y = n),
+    color = "#525252",
+    nudge_y = 8
+  ) +
+  scale_fill_manual(values = c("#7FC97F", "#BEAED4")) +
+  scale_y_continuous(limits = c(0, by_sex_total_count_ul)) +
+  labs(
+    title = str_wrap(gender_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Year",
+    y = "Number of deaths",
+    fill = "Sex"
+  ) +
+  theme_suicide_data_report
+```
+
+## Methods of Suicides in Coconino County (`r years_of_analysis`)
+
+```{r 16-method}
+# preparation
+method_count_ul <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year) %>%
+  count(method_code_cdc_lump) %>%
+  ungroup() %>%
+  summarise(count_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+method_title <- str_c("Methods of Suicides (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(death_book_year) %>%
+  count(method_code_cdc_lump) %>%
+  ungroup() %>%
+  ggplot(mapping = aes(x = death_book_year, y = n, fill = method_code_cdc_lump)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  ylim(0, method_count_ul) +
+  geom_text(
+    position = position_dodge(width = 1),
+    mapping = aes(label = (n)),
+    color = "#3b3b3b",
+    vjust = -1
+  ) +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(
+    title = str_wrap(method_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Year",
+    y = "Number of deaths",
+    fill = "Method",
+    caption = str_wrap(
+      "Method is coded from a free text variable and is an injury description.",
+      width = 120
+    )
+  ) +
+  theme_suicide_data_report
+```
+
+## Methods of Suicide by Gender in Coconino County (`r years_of_analysis`)
+
+```{r 17-method-by-sex}
+# preparation
+method_count_ul <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(sex) %>%
+  count(method_code_cdc_lump) %>%
+  ungroup() %>%
+  summarise(count_ul = (max(n) * 1.3)) %>%
+  as.numeric()
+
+method_by_sex_title <- str_c("Methods of Suicides by Sex (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+# plot
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  group_by(sex) %>%
+  count(method_code_cdc_lump) %>%
+  ungroup() %>%
+  ggplot(mapping = aes(x = sex, y = n, group = method_code_cdc_lump, fill = method_code_cdc_lump)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  ylim(0, method_count_ul) +
+  geom_text(
+    position = position_dodge(width = 1),
+    mapping = aes(label = (n)),
+    color = "#3b3b3b",
+    vjust = -1
+  ) +
+  scale_fill_brewer(palette = "Dark2") +
+  labs(
+    title = str_wrap(method_by_sex_title, width = 120),
+    subtitle = "Including only Coconino County residents.",
+    x = "Sex",
+    y = "Number of deaths",
+    fill = "Method",
+    caption = str_wrap(
+      "Method is coded from a free text variable and is an injury description.",
+      width = 120
+    )
+  ) +
+  theme_suicide_data_report
+```

@@ -1,0 +1,932 @@
+---
+title: "Coconino County Health and Human Services Vital Record and Medical Examiner Data for Death by Suicide"
+subtitle: "Supplemental Data"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  beamer_presentation:
+    colortheme: "seahorse"
+    slide_level: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  error = FALSE,
+  message = FALSE,
+  fig.width = 11
+)
+```
+
+```{r libraries}
+library(here)
+library(tidyverse)
+library(pins)
+library(knitr)
+library(RColorBrewer)
+library(scales)
+library(cowplot)
+```
+
+```{r theme}
+theme_suicide_data_report <- theme_classic() +
+  theme(
+    axis.line = element_line(size = .5, color = "#979797"),
+    axis.ticks = element_line(size = .5, color = "#979797"),
+    aspect.ratio = 3 / 5.5,
+    text = element_text(
+      size = 14,
+      color = "#3b3b3b"
+    )
+  )
+```
+
+```{r read}
+# load pin board
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
+
+# read complete data set
+azdhs_suicide_data_extract <- suicide_data %>%
+  pin_read("azdhs_suicide_data_extract")
+
+# lower limit
+analysis_year_range_ll <- as.character(min(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_ul)))
+
+# upper limit
+analysis_year_range_ul <- as.character(max(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_ul)))
+
+# current year
+analysis_year_current <- as.character(max(unique(azdhs_suicide_data_extract$year_analysis_current)))
+
+# years of analysis
+analysis_year_range <- c(as.character(analysis_year_range_ll:analysis_year_range_ul))
+
+# create a character string showing range of years included in report
+years_of_analysis <- str_c(analysis_year_range_ll,
+  analysis_year_range_ul,
+  sep = " - "
+)
+
+# read geospatial rate by zip code
+gis_rate_zipcode_spatial <- suicide_data %>%
+  pin_read("gis_rate_zipcode_spatial")
+
+# read geospatial coconino county boundary
+gis_coco_county_spatial <- suicide_data %>%
+  pin_read("gis_coco_county_spatial")
+
+# read geospatial coconino county primary roads
+gis_coco_county_roads_spatial <- suicide_data %>%
+  pin_read("gis_coco_county_roads_spatial")
+
+# read geocoded injury locations 
+geocoded_injury_location_spatial <- suicide_data %>%
+  pin_read("geocoded_injury_location_spatial")
+
+# read all cause mortality 
+azdhs_all_cause_mortality_coconino_resident_count <- suicide_data %>%
+  pin_read("azdhs_all_cause_mortality_coconino_resident_count")
+
+# read all cause mortality military denominator
+azdhs_all_cause_mortality_coconino_military_count <- suicide_data %>%
+  pin_read("azdhs_all_cause_mortality_coconino_military_count")
+azdhs_all_cause_mortality_coconino_military_count
+
+# read death by suicide data with categorical data lumps
+azdhs_suicide_data_extract_plus_categorical_lumps <- suicide_data %>%
+  pin_read("azdhs_suicide_data_extract_plus_categorical_lumps")
+
+# read municipal boundaries 
+gis_coconino_municipal_boundaries <- suicide_data %>%
+  pin_read("gis_coconino_municipal_boundaries")
+
+# color palette: Coconino 
+coco_color_palette <- suicide_data %>%
+  pin_read("color_palette_coco_4")
+
+# color palette: Gray 
+color_palette_gray_7 <- suicide_data %>%
+  pin_read("color_palette_gray_7")
+```
+
+## Locations of Injury Address (`r years_of_analysis`) 
+
+```{r 02-locations}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- gis_rate_zipcode_spatial %>%
+  ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  # geom_sf(mapping = aes(fill = rate_per_100k), color = NA) +
+  # scale_fill_viridis_c() +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude ),
+             shape = 4,
+             size = 3,
+             alpha = 4/7,
+             color = "#545234") +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    fill = "Rate per 100K",
+    color = "Rate per 100K",
+    caption = str_wrap("", width = 60)
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+## Age groups by year (`r years_of_analysis`) 
+
+```{r 4-age-quantile-by-year}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(age_group_5_quant_bins) %>%
+  group_by(death_book_year, age_group_5_quant_bins) %>%
+  count() %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = death_book_year,
+      y = n,
+      fill = age_group_5_quant_bins
+        ),
+    position = "dodge") +
+  scale_fill_viridis_d() +
+  labs(
+    title = "Death by Suicide Grouped According to Age Group Quantiles",
+    subtitle = years_of_analysis,
+    x = "Year",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+## Death City
+
+```{r 5-injury-by-city}
+# preparation
+city_count_ul <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(death_city_name, min = 6)) %>%
+  count(city_code) %>%
+  summarise(count_ul = (max(n)) * 1.3) %>%
+  as.numeric()
+
+city_count_caption <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(death_city_name, min = 6)) %>%
+  count(city_code) %>%
+  filter(city_code == "Other")
+
+city_count_caption <- str_c("Not shown are",
+  as.character(city_count_caption[1, 2]),
+  "deaths by suicide from other cities because the count for that city is less than 6.",
+  sep = " "
+)
+
+city_count_title <- str_c("City of Location Injury Associated with Death by Suicide (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident"
+  ) %>% # county residents only %>%
+  mutate(city_code = fct_lump_min(death_city_name, min = 6)) %>%
+  count(city_code) %>%
+  filter(city_code != "Other") %>%
+  ggplot() +
+  geom_col(mapping = aes(x = reorder(city_code, n), y = n), fill = "#979797") +
+  ylim(0, city_count_ul) +
+  coord_flip() +
+  labs(
+    title = str_wrap(city_count_title, width = 100),
+    subtitle = str_wrap("Coconino County cities shown only if 6 or more deaths by suicide ", width = 100),
+    x = "City",
+    y = "Number of deaths",
+    caption = str_wrap(city_count_caption,
+      width = 100
+    )
+  ) +
+  theme_suicide_data_report
+```
+
+## Military Service 
+
+```{r 6-suicide-by-military}
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(me_brief == "no") %>%
+  filter(
+    death_book_year %in% analysis_year_range,
+    county_resident == "Resident",
+    military_service == "yes"
+  ) %>% # county residents only %>%
+  group_by(death_book_year, military_service) %>%
+  count() %>%
+  ungroup() %>%
+  full_join(azdhs_all_cause_mortality_coconino_military_count) %>%
+  mutate(military_service = case_when(
+    is.na(military_service) ~ "total",
+    TRUE ~ as.character(military_service)
+  )) %>%
+  pivot_wider(
+    names_from = military_service,
+    values_from = n
+  ) %>%
+  drop_na(yes) %>%
+  mutate(percent = yes/total) %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(x = death_book_year,
+                  y = percent),
+    fill = "#979797"
+  ) +
+  scale_y_continuous(
+    labels = percent,
+    # limits  = c(0, .05)
+    ) +
+  labs(
+    title = "Death by Suicide Related to Military Service as a Proportion of All Deaths",
+    subtitle = years_of_analysis,
+    x = "Year",
+    y = "Percentage",
+    caption = "Numerator is death by suicide related to military service. Denominator is count of all Coconino deaths."
+  ) +
+  theme_suicide_data_report
+```
+
+## Locations of Injury Address by Method (`r years_of_analysis`) 
+
+```{r 07-location-by-method}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide Grouped by Method (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude,
+                           group = method_code_cdc_lump,
+                           color = method_code_cdc_lump,
+                           shape = method_code_cdc_lump),
+             size = 2,
+             alpha = 4/7) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    caption = str_wrap("", width = 60),
+    shape = "Method",
+    color = "Method"
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+## Locations of Injury Address by Race (`r years_of_analysis`) 
+
+```{r 08-location-by-race}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide Grouped by Race (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude,
+                           group = race_code_lump,
+                           color = race_code_lump,
+                           shape = race_code_lump),
+             size = 2,
+             alpha = 4/7) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    caption = str_wrap("", width = 60),
+    color = "Race",
+    shape = "Race"
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+## Locations of Injury Address by Age Group (`r years_of_analysis`) 
+
+```{r 09-location-by-age}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide Grouped by Age (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude,
+                           group = age_group_5_quant_bins,
+                           color = age_group_5_quant_bins,
+                           shape = age_group_5_quant_bins),
+             size = 2,
+             alpha = 4/7) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    caption = str_wrap("", width = 60),
+    color = "Age group",
+    shape = "Age group"
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+## Locations of Injury Address by County Resident (`r years_of_analysis`) 
+
+```{r 10-location-by-residence}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide Grouped by County Residence (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude,
+                           group = county_resident,
+                           color = county_resident,
+                           shape = county_resident),
+             size = 2,
+             alpha = 4/7) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    caption = str_wrap("", width = 60),
+    shape = "County Residence",
+    color = "County Residence"
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+## Locations of Injury Address by Sex (`r years_of_analysis`) 
+
+```{r 11-location-by-sex}
+geo_plot_title <- str_c("Locations of Injury Associated with Death by Suicide Grouped by Sex (",
+  years_of_analysis,
+  ")",
+  sep = ""
+)
+
+geo_address_list_points <- geocoded_injury_location_spatial %>%
+  filter(longitude >= -113.3542 & longitude < -110.7507) %>%
+  filter(latitude > 34.25841 & latitude < 37.0031) %>%
+  filter(str_detect(injaddr_county, "coconino"))
+
+death_by_suicide_rate_geospatial <- ggplot() +
+  geom_sf(data = gis_coco_county_spatial, fill = "#C5C5C5", color = "#aeaeae") +
+  geom_sf(data = gis_coco_county_roads_spatial, color = "#979797") +
+  geom_sf_text(data = gis_coconino_municipal_boundaries,
+                mapping = aes(label = NAME),
+                alpha = 4/7,
+               fontface = "bold") +
+  geom_jitter(data = geo_address_list_points,
+             mapping = aes(x = longitude,
+                           y = latitude,
+                           group = sex,
+                           color = sex,
+                           shape = sex),
+             size = 2,
+             alpha = 4/7) +
+  theme_void() +
+  coord_sf(expand = TRUE) +
+  geom_rect(
+    xmin = -111.7191,
+    ymin = 35.1224,
+    xmax = -111.5068,
+    ymax = 35.24328,
+    fill = NA,
+    colour = "black",
+    size = 0.5
+  ) +
+  labs(
+    title = str_wrap(geo_plot_title, width = 100),
+    subtitle = str_wrap("Including only those locations where geocoded data exists.",
+      width = 100
+    ),
+    caption = str_wrap("", width = 60),
+    color = "Sex",
+    shape = "Sex"
+  )
+
+death_by_suicide_rate_geospatial %>%
+  ggdraw() +
+  draw_plot(
+    {
+      death_by_suicide_rate_geospatial +
+        coord_sf(
+          xlim = c(-111.7191, -111.5068),
+          ylim = c(35.1224, 35.24328),
+          expand = FALSE
+        ) +
+        theme(legend.position = "none") +
+        labs(
+          title = "Flagstaff",
+          subtitle = "",
+          caption = ""
+        )
+    },
+    x = 0,
+    y = 0.05,
+    width = 0.4,
+    height = 0.4
+  )
+```
+
+
+## Percent of death by suicide compared to total number of deaths  (`r years_of_analysis`) 
+
+
+```{r 12-percent-of-total}
+count_of_suicide_by_year <- azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(county_resident == "Resident") %>%
+  count(death_book_year)
+
+suicide_as_percent_5_year_mean <- full_join(
+  x = azdhs_all_cause_mortality_coconino_resident_count,
+  y = count_of_suicide_by_year,
+  by = "death_book_year"
+) %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  summarise(n.x = sum(n.x),
+            n.y = sum(n.y)) %>%
+  transmute(percent = n.y/n.x) %>%
+  as.numeric()
+
+full_join(
+  x = azdhs_all_cause_mortality_coconino_resident_count,
+  y = count_of_suicide_by_year,
+  by = "death_book_year"
+) %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  mutate(percent = n.y/n.x) %>%
+  ggplot() +
+  geom_col(mapping = aes(
+    x = death_book_year,
+    y = percent
+  ),
+  fill = "#979797") +
+  scale_y_continuous(
+    labels = percent,
+    limits  = c(0, .1)
+  ) +
+  geom_hline(mapping = aes(
+    yintercept = suicide_as_percent_5_year_mean,
+    color = "5 year average"),
+    size = 1.5,
+    alpha = 2/3
+  ) +
+  scale_color_manual(values = "#8CBDB8") +
+  labs(
+    title = "Suicide as a Percentage of Total Deaths",
+    subtitle = "Coconino Residents",
+    x = "Year",
+    y = "Percent",
+    color = NULL
+  ) +
+  theme_suicide_data_report
+```
+
+
+## By Marital Status (`r years_of_analysis`) 
+
+```{r 13-marital}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(marital_code) %>%
+  group_by(marital_code) %>%
+  count(sort = TRUE) %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = fct_reorder(marital_code, n),
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  coord_flip() +
+  labs(
+    title = "Death by Suicide Grouped According to Marital Status",
+    subtitle = years_of_analysis,
+    x = "Marital Status",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+## By Educational Attainment (`r years_of_analysis`) 
+
+```{r 14-edu}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(edu_code) %>%
+  group_by(edu_code) %>%
+  count(sort = TRUE) %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = fct_reorder(edu_code, n),
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  coord_flip() +
+  labs(
+    title = "Death by Suicide Grouped According to Educational Attainment",
+    subtitle = years_of_analysis,
+    x = "Educational Attainment",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+
+## By Day of the Week (`r years_of_analysis`) 
+
+```{r 15-weekday}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(date_of_death_day_week) %>%
+  group_by(date_of_death_day_week) %>%
+  count() %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = date_of_death_day_week,
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  labs(
+    title = "Death by Suicide Grouped According to Day of the Week",
+    subtitle = years_of_analysis,
+    x = "Day of the Week",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+## By Day of the Month (`r years_of_analysis`) 
+
+```{r 16-day-of-month}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(date_of_death_day_month) %>%
+  group_by(date_of_death_day_month) %>%
+  count() %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = date_of_death_day_month,
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  scale_x_continuous(breaks = seq(1,31, 3)) +
+  labs(
+    title = "Death by Suicide Grouped According to Day of the Month",
+    subtitle = years_of_analysis,
+    x = "Day",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+
+## By Month (`r years_of_analysis`) 
+
+```{r 17-month}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(date_of_death_month) %>%
+  group_by(date_of_death_month) %>%
+  count() %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = date_of_death_month,
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  scale_x_continuous(breaks = seq(1,12, 3), labels = c("Jan", "Apr", "Jul", "Oct")) +
+  labs(
+    title = "Death by Suicide Grouped According to Month",
+    subtitle = years_of_analysis,
+    x = "Month",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = ""
+  ) +
+  theme_suicide_data_report
+```
+
+
+## By Birth Country (`r years_of_analysis`) 
+
+```{r 18-birth-country}
+# glimpse(azdhs_suicide_data_extract_plus_categorical_lumps)
+
+azdhs_suicide_data_extract_plus_categorical_lumps %>%
+  filter(death_book_year %in% analysis_year_range) %>%
+  drop_na(birth_country) %>%
+  group_by(birth_country) %>%
+  count() %>%
+  filter(birth_country != "United States" & birth_country != "Unknown") %>%
+  ggplot() +
+  geom_col(
+    mapping = aes(
+      x = reorder(birth_country, n),
+      y = n
+        ),
+    position = "dodge",
+    fill = "#979797") +
+  coord_flip() +
+  labs(
+    title = "Death by Suicide Grouped According to Country of Birth",
+    subtitle = years_of_analysis,
+    x = "Birth Country",
+    y = "Number of Deaths",
+    fill = "Age Group",
+    caption = "Excluding where the country of birth is the United States"
+  ) +
+  theme_suicide_data_report
+```

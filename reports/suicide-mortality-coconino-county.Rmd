@@ -1,0 +1,341 @@
+---
+title: "Suicide Mortality in Coconino County"
+author: "René Dario Herrera"
+date: "2/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  error = FALSE,
+  results = FALSE,
+  fig.asp = 3/5,
+  out.width = "800px"
+  )
+```
+
+
+```{r packages}
+library(here) # project oriented workflow
+library(tidyverse) # 
+library(janitor) # tabyl
+library(scales) # date_breaks & date_minor_breaks
+library(pins) # read data 
+library(slider)
+library(knitr)
+```
+
+```{r import}
+# load pinboard ####
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw") # suicide_data
+
+# list the pins located on the pin board ####
+suicide_data %>%
+  pin_list()
+
+# read data from pin board ####
+# azdhs mortality data
+azdhs_mortality_extract <- suicide_data %>%
+  pin_read("azdhs_mortality_extract")
+
+# pin info
+suicide_data %>%
+  pin_meta("azdhs_mortality_extract")
+
+# filter to recent years
+azdhs_mortality_extract <- azdhs_mortality_extract %>%
+  filter(death_book_year != "2016")
+
+# convert "" to NA
+azdhs_mortality_extract[azdhs_mortality_extract == ""] <- NA
+```
+
+
+# Introduction 
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+
+# Trends in Suicide in Coconino County 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+monthly_breaks <- seq.Date(from = as.Date("2017-01-01"),
+                           to = as.Date("2022-01-01"),
+                           by = "months")
+
+azdhs_mortality_extract %>%
+  drop_na(suicide) %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = suicide,
+      fill = suicide
+    ),
+    breaks = monthly_breaks
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide deaths as a proportion of total deaths per month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County",
+    x = "Date",
+    y = "Count",
+    fill = "Death by Suicide"
+  ) +
+  theme_classic()
+```
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide) %>%
+  filter(suicide == "yes") %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(x = date_of_death),
+    breaks = monthly_breaks,
+    fill = "#AEAEAE"
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County",
+    x = "Date",
+    y = "Count"
+  ) +
+  theme_classic()
+```
+
+# Markers of Suicide Vulnerability 
+
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Geography 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Age 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r, results = TRUE}
+azdhs_mortality_extract %>%
+  drop_na(age_group_6cat, suicide) %>%
+  tabyl(
+    age_group_6cat, suicide
+  ) %>%
+  adorn_percentages() %>%
+  kable(
+    caption = "Death by suicide grouped by age group as a percentage of total deaths for each age group.",
+    col.names = c(
+      "Age group",
+      "Non-suicide death",
+      "Death by suicide"
+    ),
+    digits = 2
+  )
+```
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide, age_group_6cat) %>%
+  filter(suicide == "yes") %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = age_group_6cat,
+      fill = age_group_6cat
+    ),
+    breaks = monthly_breaks,
+    color = NA
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County grouped by Age",
+    x = "Date",
+    y = "Count",
+    fill = "Age Group"
+  ) +
+  theme_classic()
+```
+
+## Race
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide, race_code_lump) %>%
+    filter(suicide == "yes") %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = race_code_lump,
+      fill = race_code_lump
+    ),
+    breaks = monthly_breaks,
+    color = NA
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County grouped by Race",
+    x = "Date",
+    y = "Count",
+    fill = "Race Group"
+  ) +
+  theme_classic() 
+```
+
+## Sex 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide, sex) %>%
+    filter(suicide == "yes") %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = sex,
+      fill = sex
+    ),
+    breaks = monthly_breaks,
+    color = NA
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County grouped by Sex",
+    x = "Date",
+    y = "Count",
+    fill = "Sex"
+  ) +
+  theme_classic() 
+```
+
+## Military
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide, military_service) %>%
+    filter(suicide == "yes") %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = military_service,
+      fill = military_service
+    ),
+    breaks = monthly_breaks,
+    color = NA
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County grouped by Military Service",
+    x = "Date",
+    y = "Count",
+    fill = "Military Service"
+  ) +
+  theme_classic() 
+```
+
+# Causes of trends in suicide
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Access to Means
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+
+```{r}
+azdhs_mortality_extract %>%
+  drop_na(suicide, method_code_cdc) %>%
+    filter(suicide == "yes") %>%
+  mutate(
+    method_code_cdc_lump = fct_lump(method_code_cdc, n = 3)
+  ) %>%
+  ggplot() +
+  geom_histogram(
+    mapping = aes(
+      x = date_of_death,
+      group = method_code_cdc_lump,
+      fill = method_code_cdc_lump
+    ),
+    breaks = monthly_breaks,
+    color = NA
+  ) +
+  scale_x_date(
+    date_breaks = "year",
+    date_minor_breaks = "3 months"
+  ) +
+  labs(
+    title = "Suicide Deaths per Month (Inclusive of 2017-2021)",
+    subtitle = "Coconino County grouped by Means",
+    x = "Date",
+    y = "Count",
+    fill = "Means"
+  ) +
+  theme_classic() 
+```
+
+## Structural Racism 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Economic Factors 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Opioid Epidemic 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+## Loneliness and Social Isolation 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+# Coconino County Suicide Rates in a State Context 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.
+
+# Coconino County Suicide Rates in a National Context 
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Sed augue lacus viverra vitae. Arcu cursus vitae congue mauris. Nibh tellus molestie nunc non blandit massa. Sed faucibus turpis in eu mi bibendum neque egestas. Et netus et malesuada fames. Non pulvinar neque laoreet suspendisse interdum consectetur libero id. Aliquam purus sit amet luctus venenatis lectus magna. Nisl nunc mi ipsum faucibus vitae. Eget gravida cum sociis natoque penatibus et magnis dis. Convallis convallis tellus id interdum velit laoreet id. At tellus at urna condimentum mattis. Purus ut faucibus pulvinar elementum integer enim neque. Lectus magna fringilla urna porttitor rhoncus. Orci eu lobortis elementum nibh.

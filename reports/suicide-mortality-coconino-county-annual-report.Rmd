@@ -1,0 +1,168 @@
+---
+title: "Suicide Mortality in Coconino County"
+author: "René Dario Herrera"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  error = FALSE,
+  results = FALSE,
+  fig.asp = 3/5,
+  out.width = "800px"
+  )
+```
+
+
+```{r packages}
+library(here) # project oriented workflow
+library(tidyverse) #
+library(janitor) # tabyl
+library(scales) # date_breaks & date_minor_breaks
+library(pins) # read data
+library(slider)
+library(knitr)
+```
+
+```{r import}
+# load pinboard ####
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw") # suicide_data
+
+# list the pins located on the pin board ####
+suicide_data %>%
+  pin_list()
+
+# read data from pin board ####
+# azdhs mortality data
+azdhs_mortality_extract <- suicide_data %>%
+  pin_read("azdhs_mortality_extract")
+
+# pin info
+suicide_data %>%
+  pin_meta("azdhs_mortality_extract")
+
+# filter to recent years
+azdhs_mortality_extract <- azdhs_mortality_extract %>%
+  filter(death_book_year != "2016")
+
+# convert "" to NA
+azdhs_mortality_extract[azdhs_mortality_extract == ""] <- NA
+```
+
+
+# Executive Summary
+
+
+Source: https://pub.azdhs.gov/health-stats/report/suicide/documents/suicide-report-2020.pdf
+
+
+## Suicide
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Dignissim suspendisse in est ante in nibh. Sollicitudin tempor id eu nisl nunc mi ipsum faucibus vitae. Diam vulputate ut pharetra sit amet aliquam. Sem fringilla ut morbi tincidunt augue interdum. Magna fringilla urna porttitor rhoncus dolor. Massa tincidunt nunc pulvinar sapien et ligula ullamcorper malesuada proin. Netus et malesuada fames ac turpis egestas sed. Eu consequat ac felis donec et odio pellentesque diam. Blandit turpis cursus in hac habitasse platea dictumst. Suscipit adipiscing bibendum est ultricies integer quis auctor elit sed. Nisl suscipit adipiscing bibendum est ultricies integer quis auctor elit. Ipsum consequat nisl vel pretium lectus quam id leo in. Ultricies mi quis hendrerit dolor magna eget est lorem ipsum. Cursus euismod quis viverra nibh.
+
+## Self-Inflicted Injury
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Dignissim suspendisse in est ante in nibh. Sollicitudin tempor id eu nisl nunc mi ipsum faucibus vitae. Diam vulputate ut pharetra sit amet aliquam. Sem fringilla ut morbi tincidunt augue interdum. Magna fringilla urna porttitor rhoncus dolor. Massa tincidunt nunc pulvinar sapien et ligula ullamcorper malesuada proin. Netus et malesuada fames ac turpis egestas sed. Eu consequat ac felis donec et odio pellentesque diam. Blandit turpis cursus in hac habitasse platea dictumst. Suscipit adipiscing bibendum est ultricies integer quis auctor elit sed. Nisl suscipit adipiscing bibendum est ultricies integer quis auctor elit. Ipsum consequat nisl vel pretium lectus quam id leo in. Ultricies mi quis hendrerit dolor magna eget est lorem ipsum. Cursus euismod quis viverra nibh.
+
+
+1. Figure: Top 10 leading causes of death and years of potential life lost (YPLL) before age 75 among Arizona residents, for year xxxx. This should be two bar charts. 1-where x= cause of death and y=count of death; 2-where x=cause of death and y=YPLL
+2. Figure: Age adjusted suicide mortality rate per 100,000, Coconino versus Arizona versus United States; line chart where color = geography  
+3. Figure: Age adjusted mortality rates for suicide, motor vehicle accident, and homicide; line chart where color = cause of death
+4. Figure: Age adjusted mortality rates for suicide by sex and year; line chart where color = sex
+5. Figure: Age specific suicide mortality rates by age group; facet_wrap(~age_group)
+6. Figure: Mechanisms of suicide mortality by gender; stacked bar chart where x = sex, y = percent, fill = means
+7. Figure: Suicide deaths by place of occurrence; bar chart where x = place, y = percent
+8. Figure: Age adjusted mortality rates of suicide by urban/rural areas; bar chart where x= urban/rural, y = rate, fill = sex
+9. Figure: age adjusted mortality rates of suicide by supervisor district of residence; map where boundaries are supervisor districts and fill = rate  
+10. Figure: age adjusted mortality rates of male suicide by supervisor district of residence; map where boundaries are supervisor district and fill = rate
+
+
+# Suicide: Race / Ethnicity Disparities
+
+
+1. Figure: Age adjusted mortality rates of suicide by race/ ethnicity; bar chart where x = race and y = rate  
+2. Figure: age adjusted mortality rate of suicide by race ethnicity; line chart where x = year, y = rate, color = sex, facet_wrap = race
+3. Figure: age adjusted mortality rates of suicide among American Indians by supervisor district of residence; map where fill = rate
+4. Figure: mechanisms of suicide mortality by race / ethnicity; stacked bar chart where x = race, y = percent, fill = means
+
+
+# Youth Suicide
+
+
+1. Figure: age specific suicide mortality rates among youth aged 10-24 years; line chart where x = year, y = rate, color = age group
+2. Figure: mechanisms of suicide mortality among youth age 10-24; stacked bar chart where x = age group, y = percent, and fill = means
+3. Figure: age specific suicide mortality rates among youth aged 10-24 years by county supervisor district of residence; map where fill = rate
+
+
+# Veteran Suicide
+
+
+1. Figure: Number of suicides and rates of suicide among veterans; line chart where x = year, y = rate/count, color = group (veteran-rate, total, veteran-count)
+2. Figure: Proportion of veteran suicides among all suicides occurring in Arizona; line chart where x= year, y = percent, color = group (veterans, female, male)
+3. Figure: Years of potential life lost due to suicide by veteran status; bar chart where x = cause of death, y = years, fill = veteran
+4. Figure: age specific mortality rates due to suicide by veteran status; bar chart where x= age group, y = rate, color = veteran
+5. Figure: mortality rates due to suicide by sex and veteran status; bar chart where x = sex, y = rate, fill = veteran
+6. Figure: mortality rate due to suicide by race / ethnicity and veteran status; bar chart where x = race, y = rate, fill = veteran
+7. Figure: age adjusted mortality rates of suicide among county resident veterans by district of residence; map where fill = rate
+8. Figure: age adjusted mortality rate of suicide by veteran status; line chart where x = year, y = rate, color = veteran
+9. Figure: mechanism of suicide mortality among veterans; bar chart where x = year, y = percent, fill = means
+10. Figure: Substance use in suicide mortality by veteran status; bar chart where x = substance, y = percent, fill = veteran
+11. Figure: Distribution of veteran suicide deaths by occupation; x = occupation, y = percent
+
+
+# Self-inflicted Injuries
+
+
+1. Figure: hospital discharge rates due to self-inflicted injury by type of encounter; line chart where x = year, y = rate, color = type of encounter
+2. Figure: hospital discharge rates due to self inflicted injury by sex; bar chart where x = type of encounter, y = rate, fill = sex
+3. Figure: hospital discharge rates due to self-inflicted injury by age and sex; bar chart where x = age group, y = rate, and fill = sex
+4. Figure: age adjusted hospital discharge rates due to self inflicted injury by race / ethnicity; bar chart where x = race, y = rate
+5. Figure: Percentage of hospital discharges due to self inflicted injury by mechanism; bar chart where x = sex, y = percent, fill = means
+6. Figure: Total charges for hospital discharges, due to self-inflicted injury by type of encounter; line chart where x = year, y = charges, color = type of encounter
+7. Figure: suicide mortality by recent medical history; bar chart where x = year, y = number of deaths, fill = recent medical Hx
+8. Figure: most frequent diagnoses among arizona residents who died by suicide; bar chart where x = diagnosis, y = percent
+
+
+# Appendix
+
+
+## Table: number of suicides and suicide mortality rates by age group and year
+
+| age group | year_min; count |  year_min; rate |  ... | year_max; count | year_max; rate |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| age_group min | 1 | 2 | 3 | 4 | 5 |
+|   age_group max | 6 | 7 | 8 | 9 | 0 |
+| total | total | total | total | total | total |
+
+
+## Table: suicide counts by race and sex
+
+
+| year | race group male | race group female |  
+| ---: | ---: | ---: |
+| year | 1 | 2 |
+| total | total | total |
+
+
+## Table: age adjusted mortality rates of suicide by race/ethnicity and sex
+
+
+| year | race group male | race group female |  
+| ---: | ---: | ---: |
+| year | 1 | 2 |
+| total | total | total |
+
+
+## Table: Rates and counts of suicides recorded in AZ by veteran status
+
+
+| year | overall count |  overall rate |  veteran count | veteran rate | nonveteran count | nonveteran rate |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| year | 1 | 2 | 3 | 4 | 5 | 6 |
+| total | total | total | total | total | total | total |
