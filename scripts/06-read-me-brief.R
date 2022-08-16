@@ -7,14 +7,14 @@ library(janitor)
 library(pins)
 
 # load pinboard 
-suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
+suicide_data <- board_folder("")
 
 # list the pins located on the pin board ####
 suicide_data %>%
   pin_list()
 
 # read data 
-me_brief <- read_csv(file = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw/me-brief.csv",
+me_brief <- read_csv(file = "",
                      skip = 1,
                      col_names = c("date_of_death",
                                    "medical_examiner_record_no",
