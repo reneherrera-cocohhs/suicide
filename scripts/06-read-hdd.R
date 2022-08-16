@@ -11,8 +11,8 @@ library(lubridate)
 # Pins ####
 # create a pin board ####
 # here for now, need to consider where the best place for this should really be
-folder_mortality <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
-folder_hdd <- board_folder("S:/HIPAA Compliance/Hospital Discharge Data/r-pin-board-rds-files/")
+folder_mortality <- board_folder("")
+folder_hdd <- board_folder("")
 
 # list the pins located on the pin board ####
 folder_mortality %>%
@@ -63,7 +63,7 @@ cdc_suicidal_attempt <- c(
   paste(collapse = "|")
 
 (csv_files <- dir_ls(
-  path = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/",
+  path = "",
   recurse = TRUE,
   regexp = "\\.csv$"
 ))
@@ -82,41 +82,7 @@ str(hdd_data)
 
 class(hdd_data)
 
-# # read data
-# hdd_2021 <- read_csv(
-#   file = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/2021-02/coconino_2021.csv",
-#   col_types = cols(.default = "c")
-# ) %>%
-#   clean_names()
-# 
-# hdd_2018 <- read_csv(
-#   file = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/2018_to_2020/coconino_2018_to_2020.csv",
-#   col_types = cols(.default = "c")
-# ) %>%
-#   clean_names()
-# 
-# hdd_2017 <- read_csv(file = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/2017/coconino_CY2017_reissue.csv",
-#                      col_types = cols(.default = "c")) %>%
-#   clean_names()
-# 
-# hdd_2016_a <- read_csv(file = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/201601/coconino_201601.csv",
-#                        col_types = cols(.default = "c")) %>%
-#   clean_names()
-# 
-# hdd_2016_b <- read_csv(file = "S:/HIPAA Compliance/Hospital Discharge Data/HDD_Updated-05042021/201602/coconino_201602.csv",
-#                        col_types = cols(.default = "c")) %>%
-#   clean_names()
-# 
-# hdd_2016_to_2020 <- bind_rows(
-#   hdd_2016_a,
-#   hdd_2016_b,
-#   hdd_2017,
-#   hdd_2018
-# )
-# 
-# class(hdd_2016_a)
-# 
-# glimpse(hdd_2016_to_2020)
+
 
 hdd_data <- hdd_data %>%
   mutate(
