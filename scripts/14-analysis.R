@@ -11,7 +11,7 @@ library(pins) # read data
 library(slider)
 
 # load pinboard ####
-suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw") # suicide_data
+suicide_data <- board_folder("") # suicide_data
 
 # list the pins located on the pin board ####
 suicide_data %>%
