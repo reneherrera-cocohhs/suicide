@@ -1,15 +1,11 @@
 # Introduction ####
+# Age adjustment and standardization
+# this scripts takes the standard population file from NIH SEER, imports it, and tidies it for inclusion in later analysis
 #
 # rené dario herrera
 # rherrera at coconino dot az dot gov
 # coconino county az
 # 10 January 2022
-
-
-# Age adjustment and standardization
-# René Dario Herrera
-# rherrera at coconino dot az dot edu
-# 9 November 2021
 
 # Setup ####
 # packages
@@ -25,6 +21,7 @@ suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suic
 suicide_data %>%
   pin_list()
 
+# source of data for standard population is: https://seer.cancer.gov/stdpopulations/ 
 # Read data ####
 us_std_pop <- read_fwf(
   "https://seer.cancer.gov/stdpopulations/stdpop.18ages.txt",
@@ -38,6 +35,7 @@ us_std_pop <- read_fwf(
 # inspect data
 glimpse(us_std_pop)
 
+# code the data 
 # Tidy ####
 # us standard population
 us_std_pop <- us_std_pop %>%
@@ -73,13 +71,20 @@ us_std_pop <- us_std_pop %>%
   ) %>%
   rename(age_group = age)
 
+us_std_pop
+
 # Write to pin board ####
 # add data to raw data pin board
 suicide_data %>% # this creates a new folder 'us_std_pop' at the path shown in the pin metadata
   pin_write(us_std_pop,
     title = "US Standard population",
     type = "rds",
-    description = "US Standard Population - 18 age groups. Standard populations, often referred to as standard millions, are the age distributions used as weights to create age-adjusted statistics. https://seer.cancer.gov/stdpopulations/"
+    description = "US Standard Population - 18 age groups. Standard populations, often referred to as standard millions, are the age distributions used as weights to create age-adjusted statistics. https://seer.cancer.gov/stdpopulations/",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      url = "https://seer.cancer.gov/stdpopulations/stdpop.18ages.txt"
+    )
   )
 
 # view the pin metadata ####

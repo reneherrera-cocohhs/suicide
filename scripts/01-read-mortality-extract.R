@@ -1,5 +1,5 @@
 # Introduction ####
-# Read data from the AZDHS Mortality Extract
+# Read data from the AZDHS Mortality Extract and save raw data to pinboard
 # rené dario herrera
 # rherrera at coconino dot az dot gov
 # coconino county az
@@ -10,11 +10,11 @@
 library(here) # project oriented workflow
 library(tidyverse) # data reading, wrangling, and tidying
 library(lubridate) # dates
-library(haven) # SAS
+library(haven) # SAS; import
 library(janitor) # clean
 library(pins) # data access
 
-# load pinboard 
+# load pinboard
 suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
 
 # Read data ####
@@ -25,8 +25,12 @@ suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suic
 death_data_historical <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/all_deaths.sas7bdat") %>%
   clean_names()
 
-# read year to date data
-death_data_ytd <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/coconino2021ytddeaths.sas7bdat") %>%
+# read 2021 year to date data
+death_data_ytd_2021 <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/coconino2021ytddeaths.sas7bdat") %>%
+  clean_names()
+
+# read 2022 year to date data
+death_data_ytd <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/coconino2022ytddeaths.sas7bdat") %>%
   clean_names()
 
 # Pins ####
@@ -41,7 +45,25 @@ suicide_data %>% # this creates a new folder 'death_data_historical' at the path
   pin_write(death_data_historical,
     title = "AZDHS mortality extract, historical",
     type = "rds",
-    description = "Historical (starting in 2016) all cause mortality data extract provided by AZDHS. Includes data for Coconino County residents or deaths occurring in Coconino County."
+    description = "Historical (starting in 2016) all cause mortality data extract provided by AZDHS. Includes data for Coconino County residents or deaths occurring in Coconino County.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
+  )
+
+# year 2021
+suicide_data %>% # this creates a new folder 'death_data_ytd_2021' at the path shown in the pin metadata
+  pin_write(death_data_ytd_2021,
+            title = "AZDHS mortality extract, year to date, 2021",
+            type = "rds",
+            description = "Year-to-date all cause mortality data extract provided by AZDHS. Includes data for Coconino County residents or deaths occurring in Coconino County.",
+            metadata = list(
+              owner = "Coconino HHS",
+              department = "Epidemiology",
+              user = "rherrera"
+            )
   )
 
 # YTD
@@ -49,13 +71,21 @@ suicide_data %>% # this creates a new folder 'death_data_ytd' at the path shown 
   pin_write(death_data_ytd,
     title = "AZDHS mortality extract, year to date",
     type = "rds",
-    description = "Year-to-date all cause mortality data extract provided by AZDHS. Includes data for Coconino County residents or deaths occurring in Coconino County."
+    description = "Year-to-date all cause mortality data extract provided by AZDHS. Includes data for Coconino County residents or deaths occurring in Coconino County.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
 
 # view the pin metadata ####
 # historical
 suicide_data %>%
   pin_meta("death_data_historical")
+
+suicide_data %>%
+  pin_meta("death_data_ytd_2021")
 
 # YTD
 suicide_data %>%

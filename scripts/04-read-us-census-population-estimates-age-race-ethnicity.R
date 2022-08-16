@@ -1,3 +1,12 @@
+# Introduction ####
+# Download, read, and tidy population 
+# These are the denominators needed to calculate crude and age-adjusted rates 
+#
+# rené dario herrera
+# rherrera at coconino dot az dot gov
+# coconino county az
+# 10 January 2022
+
 # Setup ####
 # packages
 library(here)
@@ -13,10 +22,11 @@ suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suic
 suicide_data %>%
   pin_list()
 
-# load variables to search for population
+# load acs variables to search for which population variables to include  
 v19 <- load_variables(2019, "acs5/subject", cache = TRUE)
 
 # age group ####
+# note that the 2016 data is in a different form, so it must be read separately and transformed to match the other years
 # read census api data for population
 coco_pop_2016 <- get_acs(
   geography = "county",
@@ -57,102 +67,52 @@ coco_pop_2016 <- coco_pop_2016 %>%
     year = "2016"
   )
 
-coco_pop_2017 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "S0101_C01_001",
-    "0-4 years" = "S0101_C01_002",
-    "5-9 years" = "S0101_C01_003",
-    "10-14 years" = "S0101_C01_004",
-    "15-19 years" = "S0101_C01_005",
-    "20-24 years" = "S0101_C01_006",
-    "25-29 years" = "S0101_C01_007",
-    "30-34 years" = "S0101_C01_008",
-    "35-39 years" = "S0101_C01_009",
-    "40-44 years" = "S0101_C01_010",
-    "45-49 years" = "S0101_C01_011",
-    "50-54 years" = "S0101_C01_012",
-    "55-59 years" = "S0101_C01_013",
-    "60-64 years" = "S0101_C01_014",
-    "65-69 years" = "S0101_C01_015",
-    "70-74 years" = "S0101_C01_016",
-    "75-79 years" = "S0101_C01_017",
-    "80-84 years" = "S0101_C01_018",
-    "85+ years" =  "S0101_C01_019"
-  ),
-  cache_table = TRUE,
-  year = 2017,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2017")
+# create function to read acs data years 2017-2020
+read_acs_pop <- function(x) {
 
-coco_pop_2018 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "S0101_C01_001",
-    "0-4 years" = "S0101_C01_002",
-    "5-9 years" = "S0101_C01_003",
-    "10-14 years" = "S0101_C01_004",
-    "15-19 years" = "S0101_C01_005",
-    "20-24 years" = "S0101_C01_006",
-    "25-29 years" = "S0101_C01_007",
-    "30-34 years" = "S0101_C01_008",
-    "35-39 years" = "S0101_C01_009",
-    "40-44 years" = "S0101_C01_010",
-    "45-49 years" = "S0101_C01_011",
-    "50-54 years" = "S0101_C01_012",
-    "55-59 years" = "S0101_C01_013",
-    "60-64 years" = "S0101_C01_014",
-    "65-69 years" = "S0101_C01_015",
-    "70-74 years" = "S0101_C01_016",
-    "75-79 years" = "S0101_C01_017",
-    "80-84 years" = "S0101_C01_018",
-    "85+ years" =  "S0101_C01_019"
-  ),
-  cache_table = TRUE,
-  year = 2018,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2018")
+  mydata <- get_acs(
+    geography = "county",
+    survey = "acs5",
+    variables = c(
+      "total" = "S0101_C01_001",
+      "0-4 years" = "S0101_C01_002",
+      "5-9 years" = "S0101_C01_003",
+      "10-14 years" = "S0101_C01_004",
+      "15-19 years" = "S0101_C01_005",
+      "20-24 years" = "S0101_C01_006",
+      "25-29 years" = "S0101_C01_007",
+      "30-34 years" = "S0101_C01_008",
+      "35-39 years" = "S0101_C01_009",
+      "40-44 years" = "S0101_C01_010",
+      "45-49 years" = "S0101_C01_011",
+      "50-54 years" = "S0101_C01_012",
+      "55-59 years" = "S0101_C01_013",
+      "60-64 years" = "S0101_C01_014",
+      "65-69 years" = "S0101_C01_015",
+      "70-74 years" = "S0101_C01_016",
+      "75-79 years" = "S0101_C01_017",
+      "80-84 years" = "S0101_C01_018",
+      "85+ years" =  "S0101_C01_019"
+    ),
+    cache_table = TRUE,
+    year = as.numeric(x),
+    state = "AZ",
+    county = "Coconino"
+  ) %>%
+    mutate(year = as.character(x))
+  
+  mydata
+}
 
-coco_pop_2019 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "S0101_C01_001",
-    "0-4 years" = "S0101_C01_002",
-    "5-9 years" = "S0101_C01_003",
-    "10-14 years" = "S0101_C01_004",
-    "15-19 years" = "S0101_C01_005",
-    "20-24 years" = "S0101_C01_006",
-    "25-29 years" = "S0101_C01_007",
-    "30-34 years" = "S0101_C01_008",
-    "35-39 years" = "S0101_C01_009",
-    "40-44 years" = "S0101_C01_010",
-    "45-49 years" = "S0101_C01_011",
-    "50-54 years" = "S0101_C01_012",
-    "55-59 years" = "S0101_C01_013",
-    "60-64 years" = "S0101_C01_014",
-    "65-69 years" = "S0101_C01_015",
-    "70-74 years" = "S0101_C01_016",
-    "75-79 years" = "S0101_C01_017",
-    "80-84 years" = "S0101_C01_018",
-    "85+ years" =  "S0101_C01_019"
-  ),
-  cache_table = TRUE,
-  year = 2019,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2019")
+# call function for each year 
+coco_pop_2017 <- read_acs_pop(2017)
+coco_pop_2018 <- read_acs_pop(2018)
+coco_pop_2019 <- read_acs_pop(2019)
+coco_pop_2020 <- read_acs_pop(2020)
 
-# copy year-2019 data to year-2020
-coco_pop_2020 <- coco_pop_2019 %>%
-  mutate(year = "2020")
+# copy year-2020 data to year-2021, because 2021 data is not yet available, 
+coco_pop_2021 <- coco_pop_2020 %>%
+  mutate(year = "2021")
 
 # combine everything together to make one data frame
 acs5_coco_population_by_age <- bind_rows(
@@ -160,9 +120,11 @@ acs5_coco_population_by_age <- bind_rows(
   coco_pop_2017,
   coco_pop_2018,
   coco_pop_2019,
-  coco_pop_2020
+  coco_pop_2020,
+  coco_pop_2021
 )
 
+# subset only the values for each category, not the total 
 acs5_coco_population_by_age %>%
   filter(variable != "total") %>%
   write_rds("data-output-tidy-processed/us-census-acs5-coconino-population-by-age.rds")
@@ -172,7 +134,11 @@ suicide_data %>% # this creates a new folder 'death_data_ytd' at the path shown 
   pin_write(acs5_coco_population_by_age,
     title = "US Census ACS 5-year population denominators",
     type = "rds",
-    description = "US Census American Community Survey, population denominators by age for calendar years 2016-2019 for Coconino County."
+    description = "US Census American Community Survey, population denominators by age for calendar years 2016-2019 for Coconino County.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology"
+    )
   )
 
 # view the pin metadata ####
@@ -180,11 +146,9 @@ suicide_data %>% # this creates a new folder 'death_data_ytd' at the path shown 
 suicide_data %>%
   pin_meta("acs5_coco_population_by_age")
 
-####
-
 # race and ethnicity ####
 # read census api data for population
-coco_pop_2016 <- get_acs(
+coco_pop_race_2016 <- get_acs(
   geography = "county",
   survey = "acs5",
   variables = c(
@@ -203,114 +167,81 @@ coco_pop_2016 <- get_acs(
 ) %>%
   mutate(year = "2016")
 
-coco_pop_2017 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "DP05_0070",
-    "Hispanic or Latino (any race)" = "DP05_0071",
-    "White Non-Hispanic" = "DP05_0077",
-    "Black or African American" = "DP05_0078",
-    "American Indian and Alaska Native" = "DP05_0079",
-    "Asian" = "DP05_0080",
-    "Native Hawaiian and Other Pacific Islander" = "DP05_0081"
-  ),
-  cache_table = TRUE,
-  year = 2017,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2017")
+# create function to read data
+read_acs_pop_race <- function(x) {
+  
+  mydata <- get_acs(
+    geography = "county",
+    survey = "acs5",
+    variables = c(
+      "total" = "DP05_0070",
+      "Hispanic or Latino (any race)" = "DP05_0071",
+      "White Non-Hispanic" = "DP05_0077",
+      "Black or African American" = "DP05_0078",
+      "American Indian and Alaska Native" = "DP05_0079",
+      "Asian" = "DP05_0080",
+      "Native Hawaiian and Other Pacific Islander" = "DP05_0081"
+    ),
+    cache_table = TRUE,
+    year = as.numeric(x),
+    state = "AZ",
+    county = "Coconino"
+  ) %>%
+    mutate(year = as.character(x))
+  
+  mydata
+}
 
-coco_pop_2018 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "DP05_0070",
-    "Hispanic or Latino (any race)" = "DP05_0071",
-    "White Non-Hispanic" = "DP05_0077",
-    "Black or African American" = "DP05_0078",
-    "American Indian and Alaska Native" = "DP05_0079",
-    "Asian" = "DP05_0080",
-    "Native Hawaiian and Other Pacific Islander" = "DP05_0081"
-  ),
-  cache_table = TRUE,
-  year = 2018,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2018")
+# call function to read data for each year 
+coco_pop_race_2017 <- read_acs_pop_race(2017)
+coco_pop_race_2018 <- read_acs_pop_race(2018)
+coco_pop_race_2019 <- read_acs_pop_race(2019)
+coco_pop_race_2020 <- read_acs_pop_race(2020)
 
-coco_pop_2019 <- get_acs(
-  geography = "county",
-  survey = "acs5",
-  variables = c(
-    "total" = "DP05_0070",
-    "Hispanic or Latino (any race)" = "DP05_0071",
-    "White Non-Hispanic" = "DP05_0077",
-    "Black or African American" = "DP05_0078",
-    "American Indian and Alaska Native" = "DP05_0079",
-    "Asian" = "DP05_0080",
-    "Native Hawaiian and Other Pacific Islander" = "DP05_0081"
-  ),
-  cache_table = TRUE,
-  year = 2019,
-  state = "AZ",
-  county = "Coconino"
-) %>%
-  mutate(year = "2019")
-
-# the 2020 data is not available from ACS5, look at Decennial census instead
-# source: https://data.census.gov/cedsci/table?t=Age%20and%20Sex%3APopulations%20and%20People%3ARace%20and%20Ethnicity&g=0500000US04005&y=2020&tid=DECENNIALPL2020.P4&hidePreview=true
-coco_pop_2020 <- tribble(
-  ~"GEOID", ~"NAME", ~"variable", ~"estimate", ~"moe", ~"year",
-  "04005", "Coconino County, Arizona", "total", 115992, NA, "2020",
-  "04005", "Coconino County, Arizona", "Hispanic or Latino (any race)", 15873, NA, "2020",
-  "04005", "Coconino County, Arizona", "White Non-Hispanic", 66001, NA, "2020",
-  "04005", "Coconino County, Arizona", "Black or African American", 1607, NA, "2020",
-  "04005", "Coconino County, Arizona", "American Indian and Alaska Native", 25294, NA, "2020",
-  "04005", "Coconino County, Arizona", "Asian", 2247, NA, "2020",
-  "04005", "Coconino County, Arizona", "Native Hawaiian and Other Pacific Islander", 201, NA, "2020"
-)
-
-# copy year-2020 to year-201
-coco_pop_2021 <- coco_pop_2020 %>%
+# copy year-2020 to year-2021
+coco_pop_race_2021 <- coco_pop_race_2020 %>%
   mutate(year = "2021")
 
-# combine
+# combine all to one data frame 
 acs5_coconino_population_by_race <- bind_rows(
-  coco_pop_2016,
-  coco_pop_2017,
-  coco_pop_2018,
-  coco_pop_2019,
-  coco_pop_2020
+  coco_pop_race_2016,
+  coco_pop_race_2017,
+  coco_pop_race_2018,
+  coco_pop_race_2019,
+  coco_pop_race_2020,
+  coco_pop_race_2021
 )
 
 # standardize race group names
-us_census_race_groups <- acs5_coconino_population_by_race %>%
+(us_census_race_groups <- acs5_coconino_population_by_race %>%
   filter(variable != "total") %>%
-  distinct(variable)
-
-# view
-us_census_race_groups
+  distinct(variable))
 
 # save race groups to disk
 write_rds(us_census_race_groups, "data-output-tidy-processed/us_census_race_groups.rds")
 
+# and 
 # save to pin board
 suicide_data %>% # this creates a new folder 'us_census_race_groups' at the path shown in the pin metadata
   pin_write(us_census_race_groups,
     title = "US Census Race Group Names",
     type = "rds",
-    description = "List of US Census race and ethnicity group names. See https://www.census.gov/topics/population/race/about.html for more information."
+    description = "List of US Census race and ethnicity group names. See https://www.census.gov/topics/population/race/about.html for more information.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology"
+    )
   )
 
 # view pin meta data
 suicide_data %>%
   pin_meta("us_census_race_groups")
 
-# recode race group names to match data provided by AZDHS
-# "American Indian and Alaska Native", "Hispanic or Latino (any race)", "White Non-Hispanic", "Other"
+# recode race group names to match data provided by AZDHS mortliaty extract 
+# "American Indian and Alaska Native", 
+# "Hispanic or Latino (any race)", 
+# "White Non-Hispanic", 
+# "Other"
 coconino_population_by_race <- acs5_coconino_population_by_race %>%
   mutate(race_code = case_when(
     variable == "Asian" ~ "Other",
@@ -340,6 +271,7 @@ coconino_population_by_race_recode %>%
     y = "Percentage"
   )
 
+# rename for saving to pin board 
 acs5_coco_population_by_race <- coconino_population_by_race_recode
 
 # save to pin board
@@ -347,7 +279,11 @@ suicide_data %>% # this creates a new folder 'acs5_coco_population_by_race' at t
   pin_write(acs5_coco_population_by_race,
     title = "US CensusACS 5-year population denominators by race",
     type = "rds",
-    description = "US Census ACS5 population denominators by race for year 2016-2020."
+    description = "US Census ACS5 population denominators by race for year 2016-2020.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology"
+    )
   )
 
 # view pin meta data

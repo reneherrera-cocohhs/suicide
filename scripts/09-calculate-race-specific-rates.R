@@ -1,3 +1,12 @@
+# Introduction #### 
+# This script will:
+# calculate race specific rates 
+# 
+# rené dario herrera 
+# 18 May 2022
+# coconino county health and human services 
+# rherrera at coconino dot az dot gov 
+
 # Setup ####
 # packages
 library(here)
@@ -67,11 +76,11 @@ azdhs_pop_denominator <- bind_rows(
     )
   )) %>%
   group_by(year, race_code) %>%
-  summarise(estimate = sum(estimate))
+  summarise(estimate = sum(estimate)) %>%
+  ungroup()
 
 # count of death by suicide for each year and race
 (by_race_year <- azdhs_suicide_data %>%
-  filter(me_brief == "no") %>%
   filter(county_resident == "Resident") %>% # county residents only
   mutate(race_code_lump = fct_lump(race_code, n = 3)) %>%
   group_by(death_book_year, race_code_lump) %>%
@@ -92,13 +101,22 @@ azdhs_pop_denominator <- bind_rows(
 # change NA values to 0 (zero)
 count_by_race_year$n[is.na(count_by_race_year$n)] <- 0
 
-# years of analysis
-(analysis_year_range <- c(as.character(unique(azdhs_suicide_data$year_analysis_ll):unique(azdhs_suicide_data$year_analysis_ul))))
-
 # race specific rate, with count and population denominator
 (death_by_suicide_coconino_resident_race_specific_rate <- count_by_race_year %>%
-  mutate(rate_per_100k = round(100000 * (n / estimate), digits = 1)) %>%
-  filter(death_book_year %in% analysis_year_range))
+  mutate(rate_per_100k = round(100000 * (n / estimate), digits = 1)) 
+  # %>% filter(death_book_year %in% analysis_year_range)
+  )
+
+# check with plot 
+death_by_suicide_coconino_resident_race_specific_rate %>%
+  ggplot() +
+  geom_line(mapping = aes(
+    x = death_book_year,
+    y = rate_per_100k,
+    color = race_code_lump,
+    group = race_code_lump
+  )) +
+  ylim(0,NA)
 
 # save to pin board
 suicide_data %>%
@@ -106,5 +124,13 @@ suicide_data %>%
     x = death_by_suicide_coconino_resident_race_specific_rate,
     title = "Death by suicide, race specific rates",
     description = "Race specific rates of death by suicide for Coconino County Residents.",
-    type = "rds"
+    type = "rds",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
+
+suicide_data %>%
+  pin_meta("death_by_suicide_coconino_resident_race_specific_rate")

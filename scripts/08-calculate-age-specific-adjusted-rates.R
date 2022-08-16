@@ -1,5 +1,11 @@
-# number of deaths (count) includes ME pending cases
-# rate does not
+# Introduction #### 
+# This script will:
+# calculate age specific adjusted rates 
+# 
+# rené dario herrera 
+# 18 May 2022
+# coconino county health and human services 
+# rherrera at coconino dot az dot gov 
 
 # Setup ####
 # packages
@@ -85,7 +91,7 @@ unique(azdhs_suicide_data_extract$age_group_5yr)
 # count of death by suicide each year including pending cases from medical examiner
 (count_by_year <- azdhs_suicide_data_extract %>%
   filter(county_resident == "Resident") %>% # county residents only
-  filter(death_book_year %in% analysis_year_range) %>%
+  # filter(death_book_year %in% analysis_year_range) %>%
   count(death_book_year))
 
 # rename for pin board 
@@ -97,16 +103,20 @@ suicide_data %>%
     x = azdhs_death_by_suicide_coco_resident_me,
     type = "rds",
     title = "Count of death by suicide including pending ME cases",
-    description = "Count of death by suicide including pending ME cases"
+    description = "Count of death by suicide including pending ME cases",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
 
-# years of analysis
-(analysis_year_range <- c(as.character(unique(azdhs_suicide_data_extract$year_analysis_ll):unique(azdhs_suicide_data_extract$year_analysis_ul))))
+suicide_data %>%
+  pin_meta("azdhs_death_by_suicide_coco_resident_me")
 
 # count of death by suicide grouped by year and age group
 by_year_age_group <- azdhs_suicide_data_extract %>%
-  filter(death_book_year %in% analysis_year_range) %>%
-  filter(me_brief == "no") %>%
+  # filter(death_book_year %in% analysis_year_range) %>%
   filter(county_resident == "Resident") %>% # county residents only
   group_by(death_book_year, age_group_5yr) %>%
   count() %>%
@@ -133,13 +143,14 @@ by_age_plus_pop_denom %>%
     n = sum(n),
     population = sum(estimate_population)
   ) %>%
-  mutate(crude_rate_per_100k = 100000 * (n / population)) %>% # should year 2020 population be carried over to 2021?
-  filter(death_book_year %in% analysis_year_range)
+  mutate(crude_rate_per_100k = 100000 * (n / population))  # should year 2020 population be carried over to 2021?
+  # %>% filter(death_book_year %in% analysis_year_range)
 
 # age specific rate for each age group by year ####
 (death_by_suicide_coconino_resident_age_specific_rate <- by_age_plus_pop_denom %>%
-  mutate(age_specific_rate_per_100k = 100000 * (n / estimate_population)) %>%
-  filter(death_book_year %in% analysis_year_range))
+  mutate(age_specific_rate_per_100k = 100000 * (n / estimate_population)) 
+  # %>% filter(death_book_year %in% analysis_year_range)
+ )
 
 # save to pin board
 suicide_data %>%
@@ -147,8 +158,16 @@ suicide_data %>%
     x = death_by_suicide_coconino_resident_age_specific_rate,
     title = "Death by suicide, age specific rates",
     description = "Age specific rate of death by suicide for Coconino County Residents. Excludes pending cases from the medical examiner.",
-    type = "rds"
+    type = "rds",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
+
+suicide_data %>%
+  pin_meta("death_by_suicide_coconino_resident_age_specific_rate")
 
 # age adjusted rates for each year ####
 # join count with standard population
@@ -171,8 +190,9 @@ suicide_data %>%
     crude_rate_per_100k = round(100000 * (count_of_deaths / population_denominator), digits = 1),
     age_adj_rate_per_100k = round(sum(standardized_rate), digits = 1)
   ) %>%
-  ungroup() %>%
-  filter(death_book_year %in% analysis_year_range))
+  ungroup() 
+# %>% filter(death_book_year %in% analysis_year_range)
+)
 
 # save to pin board
 suicide_data %>%
@@ -180,8 +200,16 @@ suicide_data %>%
     x = death_by_suicide_coconino_resident_age_adjusted_rate,
     title = "Death by suicide, age adjusted rates",
     description = "Age adjusted rates of death by suicide for Coconino County Residents. Excludes pending cases from the medical examiner.",
-    type = "rds"
+    type = "rds",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
+
+suicide_data %>%
+  pin_meta("death_by_suicide_coconino_resident_age_adjusted_rate")
 
 # comparison of age adjusted rates between Coconino, AZ, USA ####
 # read CDC wonder data from pin
@@ -193,22 +221,28 @@ cdc_wonder_age_adj_rates_usa_az <- suicide_data %>%
 # prepare coconino rates for joining
 coconino <- death_by_suicide_coconino_resident_age_adjusted_rate %>%
   mutate(geography = "Coconino County") %>%
-  select(year = death_book_year, geography, age_adjusted_rate = age_adj_rate_per_100k)
+  select(year = death_book_year, 
+         geography, 
+         age_adjusted_rate = age_adj_rate_per_100k)
 
 # join and create new data frame
 rates_usa_az_coco <- bind_rows(
   cdc_wonder_age_adj_rates_usa_az,
   coconino
-) %>%
-  filter(year %in% analysis_year_range)
+) 
+# %>% filter(year %in% analysis_year_range)
 
 # check my work with a plot
 rates_usa_az_coco %>%
-  ggplot(mapping = aes(x = year, y = age_adjusted_rate, group = geography)) +
-  geom_line(mapping = aes(color = geography))
+  ggplot(mapping = aes(x = year, 
+                       y = age_adjusted_rate, 
+                       group = geography)) +
+  geom_line(mapping = aes(color = geography)) +
+  ylim(0,NA)
 
 # rename
-(death_by_suicide_rate_comparison <- rates_usa_az_coco)
+(death_by_suicide_rate_comparison <- rates_usa_az_coco %>%
+    arrange(year, geography))
 
 # save data frame to pin board
 suicide_data %>%
@@ -216,5 +250,13 @@ suicide_data %>%
     x = death_by_suicide_rate_comparison,
     title = "Age adjusted rates, comparison between USA, AZ, & Coconino",
     description = "Comparison of age adjusted rates of death by suicide for the United States, Arizona, and Coconino",
-    type = "rds"
+    type = "rds",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      user = "rherrera"
+    )
   )
+
+suicide_data %>%
+  pin_meta("death_by_suicide_rate_comparison")

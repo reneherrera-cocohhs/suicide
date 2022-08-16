@@ -1,3 +1,12 @@
+# Introduction ####
+# Download, read, and tidy Population Health and Vital Statistics Population Denominators from AZDHS
+# These are the denominators needed to calculate crude and age-adjusted rates 
+#
+# rené dario herrera
+# rherrera at coconino dot az dot gov
+# coconino county az
+# 10 January 2022
+
 # Setup ####
 # packages
 library(here)
@@ -18,9 +27,9 @@ suicide_data %>%
   pin_list()
 
 # Read data ####
-####
 
 # read 2020 data
+# source: https://pub.azdhs.gov/health-stats/menu/info/pop/index.php 
 # Population of Infants, Children (1-14 Years), Adolescents (15-19 Years),
 # Young Adults (20-44 Years), Middle-Aged Adults (45-64 Years),
 # and Elderly (65+) by Gender, and County of Residence
@@ -252,7 +261,12 @@ suicide_data %>% # this creates a new folder 'death_data_ytd' at the path shown 
   pin_write(azdhs_pop_data_by_sex_gender,
     title = "AZDHS Population Denominators, 5-year age groups",
     type = "rds",
-    description = "Population health and vital statistics, population denominators by race, sex, and age group for years 2016-2020 for Arizona and Coconino County. Population by Five-Year Age Groups, County, Gender, and Race/Ethnicity."
+    description = "Population health and vital statistics, population denominators by race, sex, and age group for years 2016-2020 for Arizona and Coconino County. Population by Five-Year Age Groups, County, Gender, and Race/Ethnicity.",
+    metadata = list(
+      owner = "Coconino HHS",
+      department = "Epidemiology",
+      url = "https://pub.azdhs.gov/health-stats/menu/"
+    )
   )
 
 # view the pin metadata ####

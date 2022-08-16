@@ -1,3 +1,9 @@
+# run this script once, after project setup it isn't necessary to run it again
+# This script checks if necessary packages are installed and installs the packages if not 
+# rené dario herrera 
+# 13 May 2022 
+# rherrera at coconino dot az dot gov 
+
 # Setup ####
 
 # List of packages needed #### 
@@ -17,7 +23,8 @@ packages_needed_list <- c(
   "tigris", # https://github.com/walkerke/tigris
   "sf", # https://github.com/r-spatial/sf/
   "cowplot", # https://github.com/wilkelab/cowplot
-  "tidygeocoder" # https://jessecambon.github.io/tidygeocoder/index.html
+  "tidygeocoder", # https://jessecambon.github.io/tidygeocoder/index.html
+  "slider" # https://davisvaughan.github.io/slider/
 )
 
 # function #### source: https://gist.github.com/stevenworthington/3178163
