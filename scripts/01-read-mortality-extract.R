@@ -15,22 +15,22 @@ library(janitor) # clean
 library(pins) # data access
 
 # load pinboard
-suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
+suicide_data <- board_folder("")
 
 # Read data ####
 # read historical data from the shared network drive
 ####
 # WARNING, reading the data will take several minutes (especially true if on a slow connection)
 ####
-death_data_historical <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/all_deaths.sas7bdat") %>%
+death_data_historical <- read_sas(data = "") %>%
   clean_names()
 
 # read 2021 year to date data
-death_data_ytd_2021 <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/coconino2021ytddeaths.sas7bdat") %>%
+death_data_ytd_2021 <- read_sas(data = "") %>%
   clean_names()
 
 # read 2022 year to date data
-death_data_ytd <- read_sas(data = "S:/HIPAA Compliance/SAS Files/Coconino Deaths/All Death/coconino2022ytddeaths.sas7bdat") %>%
+death_data_ytd <- read_sas(data = "") %>%
   clean_names()
 
 # Pins ####
