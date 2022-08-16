@@ -19,7 +19,7 @@ library(lubridate)
 library(pins)
 
 # load pin board 
-suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
+suicide_data <- board_folder("")
 
 # view pin board from source above
 # list the pins located on the pin board ####
