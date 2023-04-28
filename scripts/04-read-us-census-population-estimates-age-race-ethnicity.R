@@ -1,6 +1,6 @@
 # Introduction ####
-# Download, read, and tidy population 
-# These are the denominators needed to calculate crude and age-adjusted rates 
+# Download, read, and tidy population from ACS Census
+# These are the denominators needed to calculate crude and age-adjusted rates
 #
 # rené dario herrera
 # rherrera at coconino dot az dot gov
@@ -15,14 +15,14 @@ library(tidycensus)
 library(scales)
 library(pins)
 
-# load pin board 
-suicide_data <- board_folder("")
+# load pin board
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
 
 # view pin board from source above
 suicide_data %>%
   pin_list()
 
-# load acs variables to search for which population variables to include  
+# load acs variables to search for which population variables to include
 v19 <- load_variables(2019, "acs5/subject", cache = TRUE)
 
 # age group ####
@@ -50,7 +50,7 @@ coco_pop_2016 <- get_acs(
     "70-74 years" = "S0101_C01_016",
     "75-79 years" = "S0101_C01_017",
     "80-84 years" = "S0101_C01_018",
-    "85+ years" =  "S0101_C01_019"
+    "85+ years" = "S0101_C01_019"
   ),
   cache_table = TRUE,
   year = 2016,
@@ -69,7 +69,6 @@ coco_pop_2016 <- coco_pop_2016 %>%
 
 # create function to read acs data years 2017-2020
 read_acs_pop <- function(x) {
-
   mydata <- get_acs(
     geography = "county",
     survey = "acs5",
@@ -92,7 +91,7 @@ read_acs_pop <- function(x) {
       "70-74 years" = "S0101_C01_016",
       "75-79 years" = "S0101_C01_017",
       "80-84 years" = "S0101_C01_018",
-      "85+ years" =  "S0101_C01_019"
+      "85+ years" = "S0101_C01_019"
     ),
     cache_table = TRUE,
     year = as.numeric(x),
@@ -100,17 +99,17 @@ read_acs_pop <- function(x) {
     county = "Coconino"
   ) %>%
     mutate(year = as.character(x))
-  
+
   mydata
 }
 
-# call function for each year 
+# call function for each year
 coco_pop_2017 <- read_acs_pop(2017)
 coco_pop_2018 <- read_acs_pop(2018)
 coco_pop_2019 <- read_acs_pop(2019)
 coco_pop_2020 <- read_acs_pop(2020)
 
-# copy year-2020 data to year-2021, because 2021 data is not yet available, 
+# copy year-2020 data to year-2021, because 2021 data is not yet available,
 coco_pop_2021 <- coco_pop_2020 %>%
   mutate(year = "2021")
 
@@ -124,7 +123,7 @@ acs5_coco_population_by_age <- bind_rows(
   coco_pop_2021
 )
 
-# subset only the values for each category, not the total 
+# subset only the values for each category, not the total
 acs5_coco_population_by_age %>%
   filter(variable != "total") %>%
   write_rds("data-output-tidy-processed/us-census-acs5-coconino-population-by-age.rds")
@@ -169,7 +168,6 @@ coco_pop_race_2016 <- get_acs(
 
 # create function to read data
 read_acs_pop_race <- function(x) {
-  
   mydata <- get_acs(
     geography = "county",
     survey = "acs5",
@@ -188,11 +186,11 @@ read_acs_pop_race <- function(x) {
     county = "Coconino"
   ) %>%
     mutate(year = as.character(x))
-  
+
   mydata
 }
 
-# call function to read data for each year 
+# call function to read data for each year
 coco_pop_race_2017 <- read_acs_pop_race(2017)
 coco_pop_race_2018 <- read_acs_pop_race(2018)
 coco_pop_race_2019 <- read_acs_pop_race(2019)
@@ -202,7 +200,7 @@ coco_pop_race_2020 <- read_acs_pop_race(2020)
 coco_pop_race_2021 <- coco_pop_race_2020 %>%
   mutate(year = "2021")
 
-# combine all to one data frame 
+# combine all to one data frame
 acs5_coconino_population_by_race <- bind_rows(
   coco_pop_race_2016,
   coco_pop_race_2017,
@@ -220,7 +218,7 @@ acs5_coconino_population_by_race <- bind_rows(
 # save race groups to disk
 write_rds(us_census_race_groups, "data-output-tidy-processed/us_census_race_groups.rds")
 
-# and 
+# and
 # save to pin board
 suicide_data %>% # this creates a new folder 'us_census_race_groups' at the path shown in the pin metadata
   pin_write(us_census_race_groups,
@@ -237,10 +235,10 @@ suicide_data %>% # this creates a new folder 'us_census_race_groups' at the path
 suicide_data %>%
   pin_meta("us_census_race_groups")
 
-# recode race group names to match data provided by AZDHS mortliaty extract 
-# "American Indian and Alaska Native", 
-# "Hispanic or Latino (any race)", 
-# "White Non-Hispanic", 
+# recode race group names to match data provided by AZDHS mortliaty extract
+# "American Indian and Alaska Native",
+# "Hispanic or Latino (any race)",
+# "White Non-Hispanic",
 # "Other"
 coconino_population_by_race <- acs5_coconino_population_by_race %>%
   mutate(race_code = case_when(
@@ -271,7 +269,7 @@ coconino_population_by_race_recode %>%
     y = "Percentage"
   )
 
-# rename for saving to pin board 
+# rename for saving to pin board
 acs5_coco_population_by_race <- coconino_population_by_race_recode
 
 # save to pin board

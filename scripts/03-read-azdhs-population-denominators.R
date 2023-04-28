@@ -1,6 +1,6 @@
 # Introduction ####
 # Download, read, and tidy Population Health and Vital Statistics Population Denominators from AZDHS
-# These are the denominators needed to calculate crude and age-adjusted rates 
+# These are the denominators needed to calculate crude and age-adjusted rates and race-specific rates
 #
 # rené dario herrera
 # rherrera at coconino dot az dot gov
@@ -14,12 +14,11 @@ library(tidyverse)
 library(readxl)
 library(janitor)
 library(curl)
-library(purrr)
 library(lubridate)
 library(pins)
 
-# load pin board 
-suicide_data <- board_folder("")
+# load pin board
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
 
 # view pin board from source above
 # list the pins located on the pin board ####
@@ -29,7 +28,7 @@ suicide_data %>%
 # Read data ####
 
 # read 2020 data
-# source: https://pub.azdhs.gov/health-stats/menu/info/pop/index.php 
+# source: https://pub.azdhs.gov/health-stats/menu/info/pop/index.php
 # Population of Infants, Children (1-14 Years), Adolescents (15-19 Years),
 # Young Adults (20-44 Years), Middle-Aged Adults (45-64 Years),
 # and Elderly (65+) by Gender, and County of Residence
@@ -78,6 +77,13 @@ read_azdhs_pop_data <- function(x, y, z) {
   mydata
 }
 
+# call function to read data for year 2021
+azdhs_pop_data_2021 <- read_azdhs_pop_data(
+  x = "https://pub.azdhs.gov/health-stats/menu/info/pop/2021/t10a1_21.xlsx",
+  y = "2021_t10a1_21.xlsx",
+  z = "2021"
+)
+
 # call function to read data for year 2020
 azdhs_pop_data_2020 <- read_azdhs_pop_data(
   x = "https://pub.azdhs.gov/health-stats/menu/info/pop/2020/t10a1_20.xlsx",
@@ -119,7 +125,8 @@ azdhs_pop_by_life_stage <- bind_rows(
   azdhs_pop_data_2017,
   azdhs_pop_data_2018,
   azdhs_pop_data_2019,
-  azdhs_pop_data_2020
+  azdhs_pop_data_2020,
+  azdhs_pop_data_2021
 )
 
 # save to pinboard ####
@@ -212,6 +219,13 @@ read_azdhs_pop_data_sex_gender <- function(x, y, z) {
   mydata
 }
 
+# call function to read data for year 2021
+azdhs_pop_data_sex_gender_2021 <- read_azdhs_pop_data_sex_gender(
+  x = "https://pub.azdhs.gov/health-stats/menu/info/pop/2021/t10d3_21.xlsx",
+  y = "2021_t10d3_21.xlsx",
+  z = "2021"
+)
+
 # call function to read data for year 2020
 azdhs_pop_data_sex_gender_2020 <- read_azdhs_pop_data_sex_gender(
   x = "https://pub.azdhs.gov/health-stats/menu/info/pop/2020/t10d3_20.xlsx",
@@ -253,7 +267,8 @@ azdhs_pop_data_by_sex_gender <- bind_rows(
   azdhs_pop_data_sex_gender_2017,
   azdhs_pop_data_sex_gender_2018,
   azdhs_pop_data_sex_gender_2019,
-  azdhs_pop_data_sex_gender_2020
+  azdhs_pop_data_sex_gender_2020,
+  azdhs_pop_data_sex_gender_2021
 )
 
 # save to pinboard ####

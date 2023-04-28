@@ -13,15 +13,15 @@ library(here)
 library(tidyverse)
 library(pins)
 
-# load pin board 
-suicide_data <- board_folder("")
+# load pin board
+suicide_data <- board_folder("S:/HIPAA Compliance/SAS Files/Coconino Deaths/Suicide/data-raw")
 
-# view pin board 
+# view pin board
 # list the pins located on the pin board ####
 suicide_data %>%
   pin_list()
 
-# source of data for standard population is: https://seer.cancer.gov/stdpopulations/ 
+# source of data for standard population is: https://seer.cancer.gov/stdpopulations/
 # Read data ####
 us_std_pop <- read_fwf(
   "https://seer.cancer.gov/stdpopulations/stdpop.18ages.txt",
@@ -35,7 +35,7 @@ us_std_pop <- read_fwf(
 # inspect data
 glimpse(us_std_pop)
 
-# code the data 
+# code the data
 # Tidy ####
 # us standard population
 us_std_pop <- us_std_pop %>%
